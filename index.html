@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAX函数查询系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+        }
+        
+        .description {
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        #functionSearch {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #functionSearch:focus {
+            border-color: #1a2a6c;
+        }
+        
+        #suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+        
+        #suggestions div {
+            padding: 12px 15px;
+            cursor: pointer;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        #suggestions div:hover {
+            background: #f0f5ff;
+        }
+        
+        .random-section {
+            margin-bottom: 30px;
+        }
+        
+        .random-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1a2a6c;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #1a2a6c;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 140px;
+        }
+        
+        button:hover {
+            background: #2a3b8c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #pauseBtn {
+            background: #b21f1f;
+        }
+        
+        #pauseBtn:hover {
+            background: #c22f2f;
+        }
+        
+        #detailsBtn {
+            background: #fdbb2d;
+            color: #333;
+        }
+        
+        #detailsBtn:hover {
+            background: #ffcc44;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            border-radius: 12px;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .close-modal {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .close-modal:hover {
+            background: #2a3b8c;
+        }
+        
+        .function-title {
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .function-info {
+            text-align: left;
+        }
+        
+        .function-info h3 {
+            color: #1a2a6c;
+            margin: 15px 0 10px;
+            font-size: 1.3rem;
+        }
+        
+        .function-info p, .function-info pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DAX函数查询系统</h1>
+        <p class="description">查询数据分析表达式(DAX)函数的详细信息，包括功能、语法和使用场景</p>
+        
+        <div class="search-container">
+            <input type="text" id="functionSearch" placeholder="输入DAX函数名称...">
+            <div id="suggestions"></div>
+        </div>
+        
+        <div class="random-section">
+            <div class="random-display" id="randomFunction">点击"随机抽查"开始</div>
+            <div class="buttons">
+                <button id="randomBtn">随机抽查</button>
+                <button id="pauseBtn">暂停</button>
+                <button id="detailsBtn">查看详细介绍</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="functionModal">
+        <div class="modal-content">
+            <h2 class="function-title" id="modalTitle">函数名称</h2>
+            <div class="function-info" id="modalContent">
+                <!-- 内容将通过JavaScript动态添加 -->
+            </div>
+            <button class="close-modal" id="closeModal">关闭弹窗</button>
+        </div>
+    </div>
+
+    <script>
+        // DAX函数数据库
+        const daxFunctions = {
+            "SUM": {
+                description: "对某个列中的所有数值求和",
+                syntax: "SUM(<column>)",
+                example: "=SUM(Sales[Amt])",
+                usage: "SUM函数用于计算列中所有数字的总和。如果要筛选求和的值，可以使用SUMX函数并指定要进行求和的表达式。"
+            },
+            "SUMX": {
+                description: "返回为表中每一行计算的表达式的总和",
+                syntax: "SUMX(<table>, <expression>)",
+                example: "=SUMX(FILTER(InternetSales, InternetSales[SalesTerritoryID]=5),[Freight])",
+                usage: "SUMX函数采用表或返回表的表达式作为其第一个参数。第二个参数是包含要求和的数字的列，或计算结果为列的表达式。"
+            },
+            "CALCULATE": {
+                description: "计算修改后的筛选器上下文中的表达式",
+                syntax: "CALCULATE(<expression>[, <filter1>[, <filter2>[, ...]]])",
+                example: "=CALCULATE(SUM(ResellerSales_USD[SalesAmount_USD]), ALLEXCEPT(DateTime, DateTime[CalendarYear]))",
+                usage: "CALCULATE是DAX中最强大的函数之一，它允许在修改的筛选器上下文中计算表达式。可以添加多个筛选器条件来改变计算上下文。"
+            },
+            "FILTER": {
+                description: "返回一个表，表示另一个表或表达式的子集",
+                syntax: "FILTER(<table>, <filter>)",
+                example: "=FILTER(Product, RELATED(ProductSubcategory[EnglishProductSubcategoryName])=\"Caps\")",
+                usage: "FILTER函数用于获取表的子集，通常与其他需要表作为参数的函数一起使用。可以使用FILTER来减少正在使用的表中的行数，并且仅在计算中使用特定数据。"
+            },
+            "ALL": {
+                description: "返回表中的所有行或列中的所有值，忽略可能已应用的任何筛选器",
+                syntax: "ALL([<table> | <column>[, <column>[, <column>[,…]]]])",
+                example: "=CALCULATE(SUM(Sales[Amount]), ALL(Sales))",
+                usage: "ALL函数用于清除表或列上的筛选器，通常与CALCULATE函数一起使用，用于计算占总计百分比等场景。"
+            },
+            "RELATED": {
+                description: "从另一个表返回与当前行相关的值",
+                syntax: "RELATED(<column>)",
+                example: "=RELATED(ProductCategory[CategoryName])",
+                usage: "当两个表之间存在关系时，使用RELATED函数可以从相关表中获取值。这通常用于计算列中，以添加来自相关表的信息。"
+            },
+            "DATEDIFF": {
+                description: "返回两个日期之间的间隔边界数",
+                syntax: "DATEDIFF(<Date1>, <Date2>, <Interval>)",
+                example: "=DATEDIFF(StartDate, EndDate, DAY)",
+                usage: "DATEDIFF函数计算两个日期之间的差值，可以指定不同的间隔单位（秒、分钟、小时、天、周、月、季度、年）。"
+            },
+            "COUNT": {
+                description: "计算指定列中包含非空值的行数",
+                syntax: "COUNT(<column>)",
+                example: "=COUNT([ShipDate])",
+                usage: "COUNT函数对包含数字、日期或字符串的列中的行进行计数。它跳过空值，不支持TRUE/FALSE值。"
+            },
+            "COUNTROWS": {
+                description: "计算指定表中或表达式定义的表中的行数",
+                syntax: "COUNTROWS([<table>])",
+                example: "=COUNTROWS(RELATEDTABLE(ResellerSales))",
+                usage: "COUNTROWS函数用于对基表中的行数进行计数，但通常用于计算筛选表或将上下文应用到表导致的行数。"
+            },
+            "AVERAGE": {
+                description: "返回列中数字的平均值（算术平均值）",
+                syntax: "AVERAGE(<column>)",
+                example: "=AVERAGE(InternetSales[ExtendedAmount])",
+                usage: "AVERAGE函数计算列中所有数字的平均值。它会忽略文本和空值，只对数字进行运算。"
+            },
+            "MAX": {
+                description: "返回列中的最大值，或在两个标量表达式之间",
+                syntax: "MAX(<column>) 或 MAX(<expression1>, <expression2>)",
+                example: "=MAX(InternetSales[ExtendedAmount])",
+                usage: "MAX函数返回列中的最大值，或两个表达式之间的较大值。比较两个表达式时，空白在比较时被视为0。"
+            },
+            "MIN": {
+                description: "返回列中的最小值，或在两个标量表达式之间",
+                syntax: "MIN(<column>) 或 MIN(<expression1>, <expression2>)",
+                example: "=MIN([ResellerMargin])",
+                usage: "MIN函数返回列中的最小值，或两个表达式之间的较小值。比较两个表达式时，空白在比较时被视为0。"
+            },
+            "IF": {
+                description: "根据给定的条件测试返回不同的值",
+                syntax: "IF(<condition>, <value_if_true>[, <value_if_false>])",
+                example: "=IF([Amount] > 0, \"Positive\", \"Negative\")",
+                usage: "IF函数根据条件测试的结果返回不同的值，类似于Excel中的IF函数。它是DAX中实现条件逻辑的主要方式。"
+            },
+            "DIVIDE": {
+                description: "执行除法运算，并在被零除时返回备用结果或BLANK()",
+                syntax: "DIVIDE(<numerator>, <denominator>[, <alternate_result>])",
+                example: "=DIVIDE([Sales], [Units])",
+                usage: "DIVIDE函数是安全除法的推荐方法，它自动处理被零除的情况，避免出现错误。"
+            },
+            "DATE": {
+                description: "返回指定的日期（datetime）",
+                syntax: "DATE(<year>, <month>, <day>)",
+                example: "=DATE(2009, 7, 8)",
+                usage: "DATE函数将输入的年、月、日转换为日期值。在公式提供年、月和日的情况下，DATE函数最有用。"
+            },
+            "FORMAT": {
+                description: "将值转换为指定格式的文本",
+                syntax: "FORMAT(<value>, <format_string>)",
+                example: "=FORMAT([TransactionDate], \"YYYY-MM\")",
+                usage: "FORMAT函数用于将日期、时间和数字值转换为特定格式的文本表示形式，常用于报表中自定义显示格式。"
+            },
+            "RANKX": {
+                description: "返回表或表中表达式排序的每一行的排名",
+                syntax: "RANKX(<table>, <expression>[, <value>[, <order>[, <ties>]]])",
+                example: "=RANKX(ALL(Products), [SalesAmount])",
+                usage: "RANKX函数用于对表中的行进行排名，可以根据指定的表达式确定排名顺序。常用于创建排名报表。"
+            }
+        };
+
+        // DOM元素
+        const searchInput = document.getElementById('functionSearch');
+        const suggestions = document.getElementById('suggestions');
+        const randomFunctionDisplay = document.getElementById('randomFunction');
+        const randomBtn = document.getElementById('randomBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const detailsBtn = document.getElementById('detailsBtn');
+        const modal = document.getElementById('functionModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const closeModal = document.getElementById('closeModal');
+
+        // 变量
+        let randomInterval = null;
+        let currentFunction = '';
+
+        // 初始化函数列表（按字母顺序排序）
+        const functionNames = Object.keys(daxFunctions).sort();
+
+        // 显示建议列表
+        function showSuggestions() {
+            const inputValue = searchInput.value.toLowerCase();
+            suggestions.innerHTML = '';
+            
+            if (inputValue.length === 0) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            const filteredFunctions = functionNames.filter(name => 
+                name.toLowerCase().includes(inputValue)
+            );
+            
+            if (filteredFunctions.length > 0) {
+                suggestions.style.display = 'block';
+                filteredFunctions.forEach(func => {
+                    const div = document.createElement('div');
+                    div.textContent = func;
+                    div.addEventListener('click', () => {
+                        searchInput.value = func;
+                        suggestions.style.display = 'none';
+                        showFunctionDetails(func);
+                    });
+                    suggestions.appendChild(div);
+                });
+            } else {
+                suggestions.style.display = 'none';
+            }
+        }
+
+        // 显示函数详情
+        function showFunctionDetails(funcName) {
+            if (daxFunctions[funcName]) {
+                currentFunction = funcName;
+                modalTitle.textContent = funcName;
+                
+                const func = daxFunctions[funcName];
+                modalContent.innerHTML = `
+                    <h3>功能描述</h3>
+                    <p>${func.description}</p>
+                    
+                    <h3>语法</h3>
+                    <pre>${func.syntax}</pre>
+                    
+                    <h3>使用示例</h3>
+                    <pre>${func.example}</pre>
+                    
+                    <h3>使用场景</h3>
+                    <p>${func.usage}</p>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+        }
+
+        // 随机滚动函数
+        function startRandom() {
+            if (randomInterval) clearInterval(randomInterval);
+            
+            randomInterval = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * functionNames.length);
+                randomFunctionDisplay.textContent = functionNames[randomIndex];
+                currentFunction = functionNames[randomIndex];
+            }, 100);
+            
+            randomBtn.disabled = true;
+            pauseBtn.disabled = false;
+        }
+
+        // 停止随机滚动
+        function stopRandom() {
+            if (randomInterval) {
+                clearInterval(randomInterval);
+                randomInterval = null;
+            }
+            
+            randomBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        // 事件监听器
+        searchInput.addEventListener('input', showSuggestions);
+        
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length > 0) {
+                showSuggestions();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = 'none';
+            }
+        });
+        
+        randomBtn.addEventListener('click', startRandom);
+        pauseBtn.addEventListener('click', stopRandom);
+        detailsBtn.addEventListener('click', () => {
+            if (currentFunction) {
+                showFunctionDetails(currentFunction);
+            } else {
+                alert('请先选择一个函数或开始随机抽查');
+            }
+        });
+        
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // 初始禁用暂停按钮
+        pauseBtn.disabled = true;
+    </script>
+</body>
+</html>
